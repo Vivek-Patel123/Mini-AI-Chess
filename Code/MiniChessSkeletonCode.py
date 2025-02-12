@@ -132,6 +132,40 @@ class MiniChess:
 
             self.make_move(self.current_game_state, move)
 
+            if self.is_game_over(self.current_game_state) != 2:
+                self.display_board(self.current_game_state)
+                winner = "White" if self.current_game_state["turn"] == "black" else "Black"
+                print(f"{winner} has won the game in {turn_count} moves!")
+                exit(1)
+
+            new_pieces = self.check_number_pieces(self.current_game_state)
+            if new_pieces == pieces:
+                turn_count += 1
+            else: 
+                pieces = new_pieces
+                turn_count = 0
+
+            if turn_count == 20:
+                print("It's a draw!")
+                print("Game over")
+                exit(1)
+
+    def is_game_over(self, game_state):
+        king_count = 0
+        for row in game_state["board"]:
+            for piece in row:
+                if piece in {"wK", "bK"}:
+                    king_count += 1
+        return king_count 
+
+    """
+    Check how many pieces are still on the board
+    """
+    def check_number_pieces(self, game_state):
+        return sum(1 for row in game_state["board"] for piece in row if piece != '.')
+
+    
+
 if __name__ == "__main__":
     game = MiniChess()
     game.play()
