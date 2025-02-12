@@ -57,6 +57,41 @@ class MiniChess:
         return True
 
     """
+    Check if the piece is jumping over another one or not
+    Returns False if it is
+    """
+
+    def is_path_clear(self, game_state, start, end):
+        start_row, start_col = start
+        end_row, end_col = end
+        board = game_state["board"]
+
+        row_step = 0 if start_row == end_row else (1 if end_row > start_row else -1)
+        col_step = 0 if start_col == end_col else (1 if end_col > start_col else -1)
+
+        row, col = start_row + row_step, start_col + col_step
+        while (row, col) != (end_row, end_col):
+            if board[row][col] != '.': 
+                return False
+            row += row_step
+            col += col_step
+
+        return True
+
+
+    """
+    Check if the tile the player is trying to go to is already occupied by another one of his pieces
+    """
+
+    def tile_check(self, game_state, end_row, end_col):
+        if game_state["turn"] == "black" and game_state["board"][end_row][end_col][0] == 'b':
+            return False
+
+        if game_state["turn"] == "white" and game_state["board"][end_row][end_col][0] == 'w':
+            return False
+        return True
+
+    """
     Returns a list of valid moves
 
     Args:
