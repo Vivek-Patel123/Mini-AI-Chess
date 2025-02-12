@@ -54,6 +54,70 @@ class MiniChess:
     """
     def is_valid_move(self, game_state, move):
         # Check if move is in list of valid moves
+        start = move[0]
+        end = move[1]
+        start_row, start_col = start
+        end_row, end_col = end
+
+        if (start_row < 0 or start_row > 4) or (start_col < 0 or start_col > 4) or \
+            (end_row < 0 or end_row > 4) or (end_col < 0 or end_col > 4):
+                return False
+
+
+        piece = game_state["board"][start_row][start_col]
+
+        if piece == '.':
+            return False
+
+        if (game_state["turn"] == "black" and piece[0] == 'w') or (game_state["turn"] == "white" and piece[0] == 'b'): 
+            return False
+
+        if not self.tile_check(game_state, end_row, end_col):
+            return False
+        
+        match piece:
+            case 'wK' | 'bK':
+                if abs(end_row - start_row) <= 1 and abs(end_col - start_col) <= 1:
+                    return True
+                else: return False
+            
+            case 'wQ' | 'bQ':
+                if end_row == start_row or end_col == start_col or abs(end_row - start_row) == abs(end_col - start_col):
+                    return self.is_path_clear(game_state, start, end)
+                return False
+            
+            case 'wB' | 'bB':
+                if abs(end_row - start_row) == abs(end_col - start_col):
+                    return self.is_path_clear(game_state, start, end)
+                return False
+                    
+            case 'wN' | 'bN':
+                return (abs(end_row - start_row) == 2 and abs(end_col - start_col) == 1) or \
+                (abs(end_row - start_row) == 1 and abs(end_col - start_col) == 2)
+
+            case 'wp':  
+                if end_col == start_col and end_row == start_row - 1:
+                    if game_state["board"][end_row][end_col] == '.':
+                        return True
+
+                if abs(end_col - start_col) == 1 and end_row == start_row - 1:
+                    if game_state["board"][end_row][end_col] != '.' and game_state["board"][end_row][end_col][0] == 'b':
+                        return True
+
+                return False
+
+            case 'bp':  
+                if end_col == start_col and end_row == start_row + 1:
+                    if game_state["board"][end_row][end_col] == '.':
+                        return True
+
+                if abs(end_col - start_col) == 1 and end_row == start_row + 1:
+                    if game_state["board"][end_row][end_col] != '.' and game_state["board"][end_row][end_col][0] == 'w':
+                        return True
+
+                return False
+
+
         return True
 
     """
@@ -86,7 +150,14 @@ class MiniChess:
         end_row, end_col = end
         piece = game_state["board"][start_row][start_col]
         game_state["board"][start_row][start_col] = '.'
-        game_state["board"][end_row][end_col] = piece
+
+
+        if piece == "wp" and end_row == 0:
+            game_state["board"][end_row][end_col] = "wQ"
+        elif piece == "bp" and end_row == 4:
+            game_state["board"][end_row][end_col] = "bQ"
+        else: game_state["board"][end_row][end_col] = piece
+
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
         return game_state
@@ -117,6 +188,8 @@ class MiniChess:
         - None
     """
     def play(self):
+        turn_count = 0
+        pieces = self.check_number_pieces(self.current_game_state)
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
         while True:
             self.display_board(self.current_game_state)
@@ -129,7 +202,7 @@ class MiniChess:
             if not move or not self.is_valid_move(self.current_game_state, move):
                 print("Invalid move. Try again.")
                 continue
-
+      
             self.make_move(self.current_game_state, move)
 
 if __name__ == "__main__":
