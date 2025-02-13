@@ -36,12 +36,12 @@ class MiniChess:
         - None
     """
     def display_board(self, game_state):
-        print()
+        board_str = "\n"
         for i, row in enumerate(game_state["board"], start=1):
-            print(str(6-i) + "  " + ' '.join(piece.rjust(3) for piece in row))
-        print()
-        print("     A   B   C   D   E")
-        print()
+            board_str += str(6 - i) + "  " + ' '.join(piece.rjust(3) for piece in row) + "\n"
+        board_str += "\n     A   B   C   D   E\n\n"
+        return board_str
+
 
     """
     Check if the move is valid    
@@ -226,37 +226,51 @@ class MiniChess:
         turn_count = 0
         pieces = self.check_number_pieces(self.current_game_state)
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
-        while True:
-            self.display_board(self.current_game_state)
-            move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
-            if move.lower() == 'exit':
-                print("Game exited.")
-                exit(1)
 
-            move = self.parse_input(move)
-            if not move or not self.is_valid_move(self.current_game_state, move):
-                print("Invalid move. Try again.")
-                continue
-      
-            self.make_move(self.current_game_state, move)
+        with open("gameTrace-false-5-na.txt", "w") as file:
+            file.write(self.display_board(self.current_game_state) + "\n")
 
-            if self.is_game_over(self.current_game_state) != 2:
-                self.display_board(self.current_game_state)
-                winner = "White" if self.current_game_state["turn"] == "black" else "Black"
-                print(f"{winner} has won the game in {turn_count} moves!")
-                exit(1)
+            while True:
+                print(self.display_board(self.current_game_state))
+                move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
+                raw_move = move
+                if move.lower() == 'exit':
+                    file.write("Player: " + self.current_game_state["turn"]+ "\n")
+                    file.write("Turn #" + str(turn_count//2 + 1) + "\n")
+                    file.write("Move: " + raw_move + "\n")
+                    print("Game exited.")
+                    exit(1)
 
-            new_pieces = self.check_number_pieces(self.current_game_state)
-            if new_pieces == pieces:
-                turn_count += 1
-            else: 
-                pieces = new_pieces
-                turn_count = 0
+                move = self.parse_input(move)
+                if not move or not self.is_valid_move(self.current_game_state, move):
+                    print("Invalid move. Try again.")
+                    continue
+        
+                file.write("Player: " + self.current_game_state["turn"]+ "\n")
+                file.write("Turn #" + str(turn_count//2 + 1) + "\n")
+                file.write("Move: " + str(raw_move) + "\n")
+                self.make_move(self.current_game_state, move)
+                file.write(self.display_board(self.current_game_state) + "\n")
 
-            if turn_count == 20:
-                print("It's a draw!")
-                print("Game over")
-                exit(1)
+                if self.is_game_over(self.current_game_state) != 2:
+                    print(self.display_board(self.current_game_state))
+                    winner = "White" if self.current_game_state["turn"] == "black" else "Black"
+                    print(f"{winner} has won the game in {turn_count} turns!")
+                    file.write(f"{winner} has won the game in {turn_count} turns!")
+                    exit(1)
+
+                new_pieces = self.check_number_pieces(self.current_game_state)
+                if new_pieces == pieces:
+                    turn_count += 1
+                else: 
+                    pieces = new_pieces
+                    turn_count = 0
+
+                if turn_count == 20:
+                    print("It's a draw!")
+                    print("Game over")
+                    file.write("It's a draw!")
+                    exit(1)
 
     def is_game_over(self, game_state):
         king_count = 0
