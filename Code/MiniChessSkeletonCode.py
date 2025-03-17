@@ -224,6 +224,7 @@ class MiniChess:
     """
     def play(self):
         turn_count = 0
+        draw_turn_count = 0
         pieces = self.check_number_pieces(self.current_game_state)
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
 
@@ -260,13 +261,14 @@ class MiniChess:
                     exit(1)
 
                 new_pieces = self.check_number_pieces(self.current_game_state)
+                turn_count += 1
                 if new_pieces == pieces:
-                    turn_count += 1
+                    draw_turn_count += 1
                 else: 
                     pieces = new_pieces
-                    turn_count = 0
+                    draw_turn_count = 0
 
-                if turn_count == 20:
+                if draw_turn_count == 20:
                     print("It's a draw!")
                     print("Game over")
                     file.write("It's a draw!")
