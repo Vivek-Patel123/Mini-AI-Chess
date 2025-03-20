@@ -679,7 +679,9 @@ class MiniChess:
                     file.write(f"Cumulative States Explored: {states_explored}\nCumulative States Explored by Depth:\n")
 
                     for depth, count in states_explored_by_depth.items():
-                        file.write(f"  Depth {depth}: {count} states ({states_by_depth_percent.get(depth, 0):.1f}%)\n")
+                        if depth == 0:
+                            continue
+                        file.write(f"  Depth {depth - 1}: {count} states ({states_by_depth_percent.get(depth, 0):.1f}%)\n")
 
                     file.write(f"Average Branching Factor: {branching_factor:.2f}\n")
 
