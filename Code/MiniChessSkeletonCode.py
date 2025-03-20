@@ -413,6 +413,94 @@ class MiniChess:
             return best_move, best_value, action_time, heuristic_score, best_value, states_explored_this_depth, branching_factor, states_explored_by_depth
 
     """
+        Minimax algorithm with alpha-beta pruning for optimization with time limit and dynamic heuristic.
+        
+        Args:
+            - game_state:   dictionary | Current game state
+            - depth:         int      | Maximum search depth
+            - maximizing_player: bool | True if AI's turn, False otherwise
+            - alpha:         int      | Alpha value for pruning
+            - beta:          int      | Beta value for pruning
+            - start_time:    float    | Time when the search started
+            - time_limit:    float    | Maximum time allowed for the search
+            - heuristic:     string   | Heuristic function to use ('e0', 'e1', 'e2')
+        
+        Returns:
+            - best_move:     tuple   | The best move calculated
+            - best_value:    int     | The evaluation score for the best move
+            - action_time:   float   | Time taken for the search in seconds
+            - heuristic_score: int   | Heuristic score of the resulting board
+            - alpha_beta_score: int  | Best value for the move
+            - states_explored: int   | Number of states explored
+            - branching_factor: float| The branching factor at this depth
+            - states_explored_by_depth: dict | States explored at each depth
+        """
+    def alpha_beta(self, game_state, depth, maximizing_player, alpha, beta, start_time, time_limit, heuristic):
+        
+        start_action_time = time.time()  # Start timing this move
+
+        # Base case: check if time is up, max depth is reached, or game is over
+        if time.time() - start_time > time_limit or depth == 0 or self.is_game_over(game_state):
+            heuristic_score = self.evaluate_game_state(game_state, heuristic)
+            action_time = time.time() - start_action_time
+            return None, heuristic_score, action_time, heuristic_score, heuristic_score, 1, 0, {depth: 1}
+
+        valid_moves = self.valid_moves(game_state)
+        best_value = -math.inf if maximizing_player else math.inf
+        best_move = None
+        states_explored_this_depth = 0
+        total_branching_factor = 0
+        states_explored_by_depth = {}
+
+        for move in valid_moves:
+            new_game_state = copy.deepcopy(game_state)
+            self.make_move(new_game_state, move)
+
+            # Recursively call alpha-beta
+            _, value, _, _, _, states_explored, branching_factor, depth_states = self.alpha_beta(
+                new_game_state, depth - 1, not maximizing_player, alpha, beta, start_time, time_limit, heuristic
+            )
+
+            # Track explored states at each depth
+            states_explored_this_depth += states_explored
+            total_branching_factor += branching_factor
+            states_explored_by_depth = self.update_depth_states(states_explored_by_depth, depth_states)
+
+            if maximizing_player:
+                if value > best_value:
+                    best_value = value
+                    best_move = move
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break  # Beta cutoff
+            else:
+                if value < best_value:
+                    best_value = value
+                    best_move = move
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break  # Alpha cutoff
+
+        # Calculate average branching factor
+        if len(valid_moves) > 0:
+            branching_factor = total_branching_factor / len(valid_moves)
+        else:
+            branching_factor = 0
+
+        # Calculate action time
+        action_time = time.time() - start_action_time
+
+        # Heuristic score of the resulting board after the best move
+        if best_move:
+            resulting_state = copy.deepcopy(game_state)
+            self.make_move(resulting_state, best_move)
+            heuristic_score = self.evaluate_game_state(resulting_state, heuristic)
+        else:
+            heuristic_score = self.evaluate_game_state(game_state, heuristic)
+
+        return best_move, best_value, action_time, heuristic_score, best_value, states_explored_this_depth, branching_factor, states_explored_by_depth
+
+    """
     Modify to board to make a move
 
     Args: 
