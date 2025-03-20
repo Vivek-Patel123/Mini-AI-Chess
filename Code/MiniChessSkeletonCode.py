@@ -291,6 +291,123 @@ class MiniChess:
     
     def specific_piece_number(self, game_state, specific_piece):
         return sum(1 for row in game_state["board"] for piece in row if piece == specific_piece)
+    
+    """
+        Minimax algorithm with depth-limited search and time limit.
+
+        Args:
+            - game_state:       dict  | Current game state
+            - depth:            int   | Current depth of the search
+            - maximizing_player: bool | True if maximizing player's turn, False otherwise
+            - start_time:       float | Time when the search started
+            - time_limit:       float | Maximum time allowed for the search
+            - heuristic:        str   | Heuristic function to use ('e0', 'e1', 'e2')
+
+        Returns:
+            - best_move:        tuple | The best move found
+            - best_value:       float | The heuristic value of the best move
+            - action_time:      float | Time taken to compute the move
+            - heuristic_score:  float | Heuristic score of the resulting board
+            - search_score:     float | Heuristic score returned by the Minimax search
+            - states_explored:  int   | Number of states explored during the search
+            - branching_factor: float | Average branching factor for the current depth
+            - states_explored_by_depth: dict | States explored at each depth
+        """
+    def minimax(self, game_state, depth, maximizing_player, start_time, time_limit, heuristic):
+        start_action_time = time.time()
+
+        # Check if time limit has been exceeded, depth reaches 0, or the game is over
+        if time.time() - start_time > time_limit or depth == 0 or self.is_game_over(game_state):
+            heuristic_score = self.evaluate_game_state(game_state, heuristic)
+            action_time = time.time() - start_action_time
+            return None, heuristic_score, action_time, heuristic_score, heuristic_score, 1, 0, {depth: 1}
+
+        valid_moves = self.valid_moves(game_state)
+        states_explored_this_depth = 0
+        total_branching_factor = 0
+        states_explored_by_depth = {}
+
+        if maximizing_player:
+            best_value = -math.inf
+            best_move = None
+
+            for move in valid_moves:
+                new_game_state = copy.deepcopy(game_state)
+                self.make_move(new_game_state, move)
+
+                # Recurse with updated game state
+                _, value, _, _, search_score, states_explored, branching_factor, depth_states = self.minimax(
+                    new_game_state, depth - 1, False, start_time, time_limit, heuristic
+                )
+
+                # Update states explored per depth
+                states_explored_this_depth += states_explored
+                total_branching_factor += branching_factor
+                states_explored_by_depth = self.update_depth_states(states_explored_by_depth, depth_states)
+
+                if value > best_value:
+                    best_value = value
+                    best_move = move
+
+            # Calculate average branching factor
+            if len(valid_moves) > 0:
+                branching_factor = total_branching_factor / len(valid_moves)
+            else:
+                branching_factor = 0
+
+            # Calculate action time
+            action_time = time.time() - start_action_time
+
+            # Heuristic score of the resulting board after the best move
+            if best_move:
+                resulting_state = copy.deepcopy(game_state)
+                self.make_move(resulting_state, best_move)
+                heuristic_score = self.evaluate_game_state(resulting_state, heuristic)
+            else:
+                heuristic_score = self.evaluate_game_state(game_state, heuristic)
+
+            return best_move, best_value, action_time, heuristic_score, best_value, states_explored_this_depth, branching_factor, states_explored_by_depth
+
+        else:  # Minimizing player
+            best_value = math.inf
+            best_move = None
+
+            for move in valid_moves:
+                new_game_state = copy.deepcopy(game_state)
+                self.make_move(new_game_state, move)
+
+                # Recurse with updated game state
+                _, value, _, _, search_score, states_explored, branching_factor, depth_states = self.minimax(
+                    new_game_state, depth - 1, True, start_time, time_limit, heuristic
+                )
+
+                # Update states explored per depth
+                states_explored_this_depth += states_explored
+                total_branching_factor += branching_factor
+                states_explored_by_depth = self.update_depth_states(states_explored_by_depth, depth_states)
+
+                if value < best_value:
+                    best_value = value
+                    best_move = move
+
+            # Calculate average branching factor
+            if len(valid_moves) > 0:
+                branching_factor = total_branching_factor / len(valid_moves)
+            else:
+                branching_factor = 0
+
+            # Calculate action time
+            action_time = time.time() - start_action_time
+
+            # Heuristic score of the resulting board after the best move
+            if best_move:
+                resulting_state = copy.deepcopy(game_state)
+                self.make_move(resulting_state, best_move)
+                heuristic_score = self.evaluate_game_state(resulting_state, heuristic)
+            else:
+                heuristic_score = self.evaluate_game_state(game_state, heuristic)
+
+            return best_move, best_value, action_time, heuristic_score, best_value, states_explored_this_depth, branching_factor, states_explored_by_depth
 
     """
     Modify to board to make a move
