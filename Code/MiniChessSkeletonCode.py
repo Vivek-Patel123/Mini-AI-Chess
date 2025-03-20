@@ -429,14 +429,18 @@ class MiniChess:
         if time.time() - start_time > time_limit or depth == 0 or self.is_game_over(game_state):
             heuristic_score = self.evaluate_game_state(game_state, heuristic)
             action_time = time.time() - start_action_time
-            return None, heuristic_score, action_time, heuristic_score, heuristic_score, 1, 0, {depth: 1}
+            # Return 0 for states at depth 0 since it's the evaluation state, not an explored move
+            return None, heuristic_score, action_time, heuristic_score, heuristic_score, 1, 0, {depth: 0}
 
         valid_moves = self.valid_moves(game_state)
         best_value = -math.inf if maximizing_player else math.inf
         best_move = None
         states_explored_this_depth = 0
         total_branching_factor = 0
-        states_explored_by_depth = {}
+        states_explored_by_depth = {depth: 0}  # Initialize for the current depth
+
+        # Track the number of states (valid moves) at this depth
+        states_explored_by_depth[depth] = len(valid_moves)
 
         for move in valid_moves:
             new_game_state = copy.deepcopy(game_state)
@@ -447,11 +451,18 @@ class MiniChess:
                 new_game_state, depth - 1, not maximizing_player, alpha, beta, start_time, time_limit, heuristic
             )
 
-            # Track explored states at each depth
+            # Accumulate states explored at this depth level
+            for d, count in depth_states.items():
+                if d in states_explored_by_depth:
+                    states_explored_by_depth[d] += count
+                else:
+                    states_explored_by_depth[d] = count
+
+            # Accumulate states explored and branching factor
             states_explored_this_depth += states_explored
             total_branching_factor += branching_factor
-            states_explored_by_depth = self.update_depth_states(states_explored_by_depth, depth_states)
 
+            # Apply alpha-beta pruning
             if maximizing_player:
                 if value > best_value:
                     best_value = value
@@ -468,10 +479,7 @@ class MiniChess:
                     break  # Alpha cutoff
 
         # Calculate average branching factor
-        if len(valid_moves) > 0:
-            branching_factor = total_branching_factor / len(valid_moves)
-        else:
-            branching_factor = 0
+        branching_factor = total_branching_factor / len(valid_moves) if valid_moves else 0
 
         # Calculate action time
         action_time = time.time() - start_action_time
@@ -485,7 +493,6 @@ class MiniChess:
             heuristic_score = self.evaluate_game_state(game_state, heuristic)
 
         return best_move, best_value, action_time, heuristic_score, best_value, states_explored_this_depth, branching_factor, states_explored_by_depth
-
     """
     Modify to board to make a move
 
