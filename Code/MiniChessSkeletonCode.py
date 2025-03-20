@@ -440,6 +440,14 @@ class MiniChess:
 
         return game_state
 
+    def update_depth_states(self, states_explored_by_depth, depth_states):
+        for depth, count in depth_states.items():
+            if depth in states_explored_by_depth:
+                states_explored_by_depth[depth] += count
+            else:
+                states_explored_by_depth[depth] = count
+        return states_explored_by_depth
+
     """
     Parse the input string and modify it into board coordinates
 
