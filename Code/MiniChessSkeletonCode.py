@@ -581,6 +581,7 @@ class MiniChess:
         - None
     """
     def play(self):
+        # Initialize various game variables
         turn_count = 0
         draw_turn_count = 0
         gamemode = 0
@@ -591,29 +592,32 @@ class MiniChess:
         states_explored = 0
         total_nodes_expanded = 0  # Track nodes expanded for branching factor calculation
 
+        # Display welcome message and initial piece count
         pieces = self.check_number_pieces(self.current_game_state)
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.\n")
 
+        # Ask user for the desired game mode
         while True:
             print("Enter your desired gamemode \n" + 
                 "1 - Human vs Human \n" + 
                 "2 - Human vs AI \n" + 
                 "3 - AI vs Human\n" +
                 "4 - AI vs AI")
-            gamemode = input().strip()
+            gamemode = input().strip()  # Get input from user
             if gamemode in {"1", "2", "3", "4"}:
                 break
 
+        # If the game mode involves AI, get additional settings
         if gamemode in {"2", "3", "4"}:
             while True:
                 timeout = input("Enter the value of the timeout in seconds: ").strip()
-                if timeout.isdigit():
+                if timeout.isdigit():  # Ensure valid input for timeout
                     timeout = int(timeout)
                     break
 
             while True:
                 max_turns = input("Enter the maximum amount of turns for the game: ").strip()
-                if max_turns.isdigit():
+                if max_turns.isdigit():  # Ensure valid input for max turns
                     max_turns = int(max_turns)
                     break
 
@@ -628,38 +632,52 @@ class MiniChess:
                 if heuristic in {"e0", "e1", "e2"}:
                     break
 
+        # Set up the file name for game trace
         file_name = f"gameTrace-{alpha_beta}-{timeout}-{max_turns}.txt"
         with open(file_name, "w") as file:
             gamemode_names = {"1": "Human vs Human", "2": "Human vs AI", "3": "AI vs Human", "4": "AI vs AI"}
             file.write(f"Gamemode: {gamemode_names[gamemode]}\n")
 
+            # Write additional game settings to the file if AI is involved
             if gamemode in {"2", "3", "4"}:
                 file.write(f"Timeout value: {timeout}\nMax turns: {max_turns}\nAlpha-beta: {alpha_beta}\nHeuristic used: {heuristic}\n")
+            
+            # Display the initial board and write it to the file
             file.write(self.display_board(self.current_game_state) + "\n")
 
             while True:
+                # Display the board at the start of each turn
                 print(self.display_board(self.current_game_state))
+                
+                # Human's turn logic for different game modes
                 if gamemode == "1" or (gamemode == "2" and self.current_game_state['turn'] == "white") or (gamemode == "3" and self.current_game_state['turn'] == "black"):
                     move = input(f"{self.current_game_state['turn'].capitalize()} to move: ").strip()
+                    
+                    # Handle exit command
                     if move.lower() == 'exit':
                         file.write(f"Player: {self.current_game_state['turn']}\nTurn #{turn_count//2 + 1}\nMove: {move}\n")
                         print("Game exited.")
-                        return  # Use return instead of exit()
+                        return  # Exit the game
 
+                    # Parse and validate the move
                     parsed_move = self.parse_input(move)
                     if not parsed_move or not self.is_valid_move(self.current_game_state, parsed_move):
                         print("Invalid move. Try again.")
                         continue
 
+                    # Log the valid move and apply it
                     file.write(f"Player: {self.current_game_state['turn']}\nTurn #{turn_count//2 + 1}\nMove: {move}\n")
                     self.make_move(self.current_game_state, parsed_move)
                     file.write(self.display_board(self.current_game_state) + "\n")
 
+                # AI's turn logic
                 else:
                     print(f"AI ({self.current_game_state['turn']}) is thinking...")
                     start_time = time.time()
 
                     states_explored_by_depth = {}
+                    
+                    # Call alpha-beta or minimax based on user choice
                     if alpha_beta:
                         move, value, action_time, heuristic_score, alpha_beta_score, states_explored_AI, branching_factor, states_explored_by_depth = self.alpha_beta(
                             self.current_game_state, 3, False, -math.inf, math.inf, start_time, timeout, heuristic)
@@ -667,44 +685,53 @@ class MiniChess:
                         move, value, action_time, heuristic_score, alpha_beta_score, states_explored_AI, branching_factor, states_explored_by_depth = self.minimax(
                             self.current_game_state, 3, False, start_time, timeout, heuristic)
 
+                    # Accumulate stats and write them to the file
                     states_explored += states_explored_AI
                     total_nodes_expanded += len(states_explored_by_depth)  # Count nodes that were expanded
                     total_states = sum(states_explored_by_depth.values())
 
-                    # Ensure division by zero is avoided
+                    # Calculate branching factor
                     if total_nodes_expanded > 0:
                         branching_factor = total_states / total_nodes_expanded
                     else:
                         branching_factor = 0
 
+                    # Calculate percentage of states explored by depth
                     states_by_depth_percent = {depth: (count / total_states) * 100 for depth, count in states_explored_by_depth.items()} if total_states > 0 else {}
 
+                    # Print AI's move and write details to the file
                     print(f"AI ({self.current_game_state['turn']}): {self.format_move(move)}")
                     file.write(f"AI: {self.current_game_state['turn']}\nTurn #{turn_count // 2 + 1}\nMove: {self.format_move(move)}\n")
                     file.write(f"Action Time: {action_time:.2f} sec\n")
                     file.write(f"Heuristic Score: {heuristic_score}\nSearch Score: {alpha_beta_score}\n")
                     file.write(f"Cumulative States Explored: {states_explored}\nCumulative States Explored by Depth:\n")
 
+                    # Log the state exploration at each depth
                     for depth, count in states_explored_by_depth.items():
                         if depth == 0:
                             continue
                         file.write(f"  Depth {depth - 1}: {count} states ({states_by_depth_percent.get(depth, 0):.1f}%)\n")
 
+                    # Log the average branching factor
                     file.write(f"Average Branching Factor: {branching_factor:.2f}\n")
 
+                    # If AI made an invalid move, end the game
                     if not self.is_valid_move(self.current_game_state, move):
                         print("Invalid move by AI.")
                         print("Game over!")
                         exit(1)
                     
+                    # Apply the AI move
                     self.make_move(self.current_game_state, move)
                     file.write(self.display_board(self.current_game_state) + "\n")
 
+                    # Check if timeout reached
                     if time.time() - start_time > timeout:
                         print("Timeout reached, game over!")
                         file.write("Game over: Timeout reached\n")
                         return
 
+                # Check if the game is over (win, draw, etc.)
                 if self.is_game_over(self.current_game_state):
                     print(self.display_board(self.current_game_state))
                     winner = "White" if self.current_game_state["turn"] == "black" else "Black"
@@ -712,6 +739,7 @@ class MiniChess:
                     file.write(f"{winner} has won the game in {turn_count // 2 + 1} turns!\n")
                     return
 
+                # Handle draw conditions
                 new_pieces = self.check_number_pieces(self.current_game_state)
                 turn_count += 1
                 if new_pieces == pieces:
@@ -725,6 +753,7 @@ class MiniChess:
                     file.write("It's a draw!\n")
                     return
 
+                # Handle maximum turns condition
                 if gamemode != "1" and turn_count >= (max_turns * 2):
                     print(self.display_board(self.current_game_state))
                     print("Maximum turns reached. Game over!")
