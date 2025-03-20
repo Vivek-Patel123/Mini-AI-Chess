@@ -164,10 +164,133 @@ class MiniChess:
         - valid moves:   list | A list of nested tuples corresponding to valid moves [((start_row, start_col),(end_row, end_col)),((start_row, start_col),(end_row, end_col))]
     """
     def valid_moves(self, game_state):
-        # Return a list of all the valid moves.
-        # Implement basic move validation
-        # Check for out-of-bounds, correct turn, move legality, etc
-        return
+        valid_moves = []
+        for row in range(5):
+            for col in range(5):
+                piece = game_state["board"][row][col]
+                if piece != '.' and piece[0] == game_state["turn"][0]:  # Check if it's the current player's piece
+                    # Generate all valid moves for this piece
+                    for move in self.valid_moves_for_piece(game_state, (row, col)):
+                        valid_moves.append(((row, col), move))
+        return valid_moves
+
+    def valid_moves_for_piece(self, game_state, start):
+        # Generate valid moves for a given piece at the specified start position
+        valid_moves = []
+        piece = game_state["board"][start[0]][start[1]]
+        for row in range(5):
+            for col in range(5):
+                move = ((start[0], start[1]), (row, col))
+                if self.is_valid_move(game_state, move):
+                    valid_moves.append((row, col))
+        return valid_moves
+
+    """
+    Evaluate the game state using the chosen heuristic.
+
+    Args:
+        - game_state:   dictionary | Current game state
+        - heuristic:     string   | Heuristic function to use ('e0', 'e1', 'e2')
+
+    Returns:
+        - int   | The evaluation score for the current game state
+    """
+    def evaluate_game_state(self, game_state, heuristic):
+        if heuristic == "e0":
+            return self.heuristic_e0(game_state)
+        elif heuristic == "e1":
+            return self.heuristic_e1(game_state)
+        elif heuristic == "e2":
+            return self.heuristic_e2(game_state)
+        else:
+            raise ValueError("Invalid heuristic")
+
+
+    def heuristic_e0(self, game_state):
+        piece_values = {
+        "wp": 1, "wB": 3, "wN": 3, "wQ": 9, "wK": 999,
+        "bp": -1, "bB": -3, "bN": -3, "bQ": -9, "bK": -999
+    }
+
+        score = 0
+
+        for piece, value in piece_values.items():
+            score += value * self.specific_piece_number(game_state, piece)
+
+        return score
+
+    def heuristic_e1(self, game_state):
+        piece_values = {
+            "wp": 1, "wB": 3, "wN": 3, "wQ": 9, "wK": 999,
+            "bp": -1, "bB": -3, "bN": -3, "bQ": -9, "bK": -999
+        }
+
+        center_positions = [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)]  # The center of the board
+        score = 0
+
+        # Iterate over all positions on the board
+        for row in range(5):
+            for col in range(5):
+                piece = game_state["board"][row][col]  # Get the piece at the current position
+
+                if piece:  # If there's a piece on the current square
+                    piece_name = piece  # piece is already in the form "wp", "bQ", etc.
+
+                    # Check if the piece exists in the piece_values dictionary
+                    if piece_name in piece_values:
+                        piece_score = piece_values[piece_name]
+                        
+                        # Enhance the score based on the piece's proximity to the center
+                        if (row, col) in center_positions:
+                            piece_score += 0.5  # Bonus for being in the center
+
+                        # Further enhancement can be made here based on other factors like piece safety
+
+                        score += piece_score  # Add the piece's score to the total score
+
+        return score
+
+    def heuristic_e2(self, game_state):
+        piece_values = {
+            "wp": 1, "wB": 3, "wN": 3, "wQ": 9, "wK": 999,
+            "bp": -1, "bB": -3, "bN": -3, "bQ": -9, "bK": -999
+        }
+
+        safety_values = {
+            "wp": 0.5, "wB": 0.7, "wN": 0.7, "wQ": 1, "wK": 2,
+            "bp": 0.5, "bB": 0.7, "bN": 0.7, "bQ": 1, "bK": 2
+        }
+
+        center_positions = [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)]  # The center of the board
+        score = 0
+
+        # Iterate over all positions on the board
+        for row in range(5):
+            for col in range(5):
+                piece = game_state["board"][row][col]  # Get the piece at the current position
+
+                if piece:  # If there's a piece on the current square
+                    piece_name = piece  # piece is already in the form "wp", "bQ", etc.
+
+                    # Check if the piece exists in the piece_values dictionary
+                    if piece_name in piece_values:
+                        piece_score = piece_values[piece_name]
+                        
+                        # Add piece safety bonus based on the piece type
+                        if piece_name in safety_values:
+                            piece_score += safety_values[piece_name]
+
+                        # Bonus for being in the center
+                        if (row, col) in center_positions:
+                            piece_score += 0.5  # Bonus for being in the center
+
+                        # Further enhancement based on material balance (the difference in material value)
+                        score += piece_score
+
+        return score
+    
+    def specific_piece_number(self, game_state, specific_piece):
+        return sum(1 for row in game_state["board"] for piece in row if piece == specific_piece)
 
     """
     Modify to board to make a move
