@@ -514,13 +514,20 @@ class MiniChess:
 
         return game_state
 
-    def update_depth_states(self, states_explored_by_depth, depth_states):
-        for depth, count in depth_states.items():
-            if depth in states_explored_by_depth:
-                states_explored_by_depth[depth] += count
+    """
+    Correctly merges states explored at different depths.
+    """
+    def update_depth_states(self, existing_depth_states, new_depth_states):
+
+        updated_depth_states = existing_depth_states.copy()  # Preserve existing state counts
+
+        for depth, count in new_depth_states.items():
+            if depth in updated_depth_states:
+                updated_depth_states[depth] += count
             else:
-                states_explored_by_depth[depth] = count
-        return states_explored_by_depth
+                updated_depth_states[depth] = count
+
+        return updated_depth_states
 
     """
     Parse the input string and modify it into board coordinates
