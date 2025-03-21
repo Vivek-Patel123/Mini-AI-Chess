@@ -247,7 +247,6 @@ class MiniChess:
                         if (row, col) in center_positions:
                             piece_score += 0.5  # Bonus for being in the center
 
-                        # Further enhancement can be made here based on other factors like piece safety
 
                         score += piece_score  # Add the piece's score to the total score
 
@@ -287,7 +286,6 @@ class MiniChess:
                         if (row, col) in center_positions:
                             piece_score += 0.5  # Bonus for being in the center
 
-                        # Further enhancement based on material balance (the difference in material value)
                         score += piece_score
 
         return score
