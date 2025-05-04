@@ -1,6 +1,6 @@
-# Mini Chess - COMP 472 Project (Winter 2025)
+# Mini AI Chess
 
-Welcome to **Mini Chess**! This project is part of the COMP 472 course, implementing an AI-driven adversarial search for a simplified version of chess. The game supports human and AI play, with the AI utilizing **Minimax and Alpha-Beta pruning**.
+Welcome to **Mini Chess**! This game implements an AI-driven adversarial search for a simplified version of chess. The game supports human and AI play, with the AI utilizing **Minimax and Alpha-Beta pruning**.
 
 ---
 
@@ -20,7 +20,7 @@ Welcome to **Mini Chess**! This project is part of the COMP 472 course, implemen
 - Python 3.x
 - Clone this repository:
   ```bash
-  git clone https://github.com/YOUR_REPO/MiniChess.git
+  git clone https://github.com/Vivek-Patel123/Mini-AI-Chess.git
   cd MiniChess
   ```
 - Run the game:
